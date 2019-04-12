@@ -12,6 +12,7 @@ class DetailViewController: UIViewController {
     
     
     @IBOutlet weak var flagImageView: UIImageView!
+    @IBOutlet weak var countryName: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad()
