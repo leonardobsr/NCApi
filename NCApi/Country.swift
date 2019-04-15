@@ -25,30 +25,25 @@ struct Country: Codable {
     var currencySymbol: String
     var flag: String
     var flagPng: String
-    
-    init() {
-        
-    }
-    
+}
+
 //    pPage    int?    False    Pagination
 //    pLimit    int?    False    Limit of objects response
-    static func getCountries(params: String, callback:@escaping ( _ data : [Result]?, _ error: Error?)->()) {
-        let url = URL(string: "http://countryapi.gear.host/v1/Country/getCountries?" + params)!
-        let task = URLSession.shared.dataTask(with: url) { (data, response, erro) in
-            if erro == nil {
-                guard let encodedData = data else {
-                    print("Error: No data to decode")
-                    return
-                }
-                
-                guard let countries = try? JSONDecoder().decode(response.self, from: encodedData) else {
-                    print("Error: Couldn't decode data into Blog")
-                    return
-                }
-            }else{
-                callback(nil, erro)
-            }
+func getCountries(query: String, page: Int, limit: Int) {
+    let jsonUrlString = "http://countryapi.gear.host/v1/Country/getCountries?" + "pName=\(String(query))" + "pPage=\(String(page))" + "pLimit=\(String(limit))"
+    
+    guard let url = URL(string: jsonUrlString) else { return }
+    
+    URLSession.shared.dataTask(with: url) { (data, response, error) in
+        
+        guard let data = data else { return }
+        
+        do {
+            let countries = try JSONDecoder().decode(Country.self, from: data)
+            print("sd")
+            print(countries)
+        } catch let jsonErr {
+            print("Error", jsonErr)
         }
-        task.resume()
-    }
+    }.resume()
 }
