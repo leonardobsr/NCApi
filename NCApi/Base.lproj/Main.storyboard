@@ -72,7 +72,7 @@
                     </tableView>
                     <navigationItem key="navigationItem" title="Countries" id="3g9-cc-amQ"/>
                     <connections>
-                        <outlet property="tableView" destination="Iv5-zd-Kvx" id="vRI-7N-VEp"/>
+                        <outlet property="tableView" destination="Iv5-zd-Kvx" id="OA1-iJ-pv9"/>
                         <segue destination="zBo-OE-MCs" kind="show" identifier="countryDetailsIdentifier" id="et1-8r-D04"/>
                     </connections>
                 </tableViewController>

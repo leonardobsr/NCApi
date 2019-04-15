@@ -14,6 +14,31 @@ struct Response: Codable {
     var TechnicalMessage: String?
     var TotalCount: Int
     var Response: [Country]
+    
+    static func getCountries(query: String?, page: Int, limit: Int, completion: @escaping ( _ data : Response?, _ error: Error?)->()) {
+        
+        var jsonUrlString = "http://countryapi.gear.host/v1/Country/getCountries?" + "pPage=\(String(page))&" + "pLimit=\(String(limit))"
+        
+        if let query = query {
+            jsonUrlString = jsonUrlString + "&pName=\(String(query))"
+        }
+        
+        guard let url = URL(string: jsonUrlString) else { return }
+        
+        URLSession.shared.dataTask(with: url) { (data, response, error) in
+            
+            guard error == nil else { return }
+            guard let data = data else { return }
+            
+            do {
+                let decoder = JSONDecoder()
+                let response = try decoder.decode(self, from: data)
+                completion(response, error)
+            } catch {
+                print("Error", error)
+            }
+            }.resume()
+    }
 }
 
 struct Country: Codable {
@@ -33,30 +58,4 @@ struct Country: Codable {
     var CurrencySymbol: String?
     var Flag: String?
     var FlagPng: String?
-}
-
-func getCountries(query: String?, page: Int, limit: Int, callback:@escaping ( _ data : Response?, _ error: Error?)->()) {
-    
-    var jsonUrlString = "http://countryapi.gear.host/v1/Country/getCountries?" + "pPage=\(String(page))&" + "pLimit=\(String(limit))"
-    
-    if let query = query {
-        jsonUrlString = jsonUrlString + "&pName=\(String(query))"
-    }
-    
-    guard let url = URL(string: jsonUrlString) else { return }
-    
-    URLSession.shared.dataTask(with: url) { (data, response, error) in
-        
-        guard error == nil else { return }
-        guard let data = data else { return }
-        
-        do {
-            let decoder = JSONDecoder()
-            let response = try decoder.decode(Response.self, from: data)
-            callback(response, error)
-        } catch {
-            callback(nil, error)
-        }
-        
-    }.resume()
 }
