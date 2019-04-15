@@ -8,42 +8,55 @@
 
 import Foundation
 
-struct Country: Codable {
-    var name: String
-    var alpha2Code: String
-    var alpha3Code: String
-    var nativeName: String
-    var region: String
-    var subregion: String
-    var latitude: String
-    var longitude: String
-    var area: Int
-    var numericCode: Int
-    var nativeLanguage: String
-    var currencyCode: String
-    var currencyName: String
-    var currencySymbol: String
-    var flag: String
-    var flagPng: String
+struct Response: Codable {
+    var IsSuccess: Bool
+    var UserMessage: String?
+    var TechnicalMessage: String?
+    var TotalCount: Int
+    var Response: [Country]
 }
 
-//    pPage    int?    False    Pagination
-//    pLimit    int?    False    Limit of objects response
-func getCountries(query: String, page: Int, limit: Int) {
-    let jsonUrlString = "http://countryapi.gear.host/v1/Country/getCountries?" + "pName=\(String(query))" + "pPage=\(String(page))" + "pLimit=\(String(limit))"
+struct Country: Codable {
+    var Name: String?
+    var Alpha2Code: String?
+    var Alpha3Code: String?
+    var NativeName: String?
+    var Region: String?
+    var SubRegion: String?
+    var Latitude: String?
+    var Longitude: String?
+    var Area: Int?
+    var NumericCode: Int?
+    var NativeLanguage: String?
+    var CurrencyCode: String?
+    var CurrencyName: String?
+    var CurrencySymbol: String?
+    var Flag: String?
+    var FlagPng: String?
+}
+
+func getCountries(query: String?, page: Int, limit: Int, callback:@escaping ( _ data : Response?, _ error: Error?)->()) {
+    
+    var jsonUrlString = "http://countryapi.gear.host/v1/Country/getCountries?" + "pPage=\(String(page))&" + "pLimit=\(String(limit))"
+    
+    if let query = query {
+        jsonUrlString = jsonUrlString + "&pName=\(String(query))"
+    }
     
     guard let url = URL(string: jsonUrlString) else { return }
     
     URLSession.shared.dataTask(with: url) { (data, response, error) in
         
+        guard error == nil else { return }
         guard let data = data else { return }
         
         do {
-            let countries = try JSONDecoder().decode(Country.self, from: data)
-            print("sd")
-            print(countries)
-        } catch let jsonErr {
-            print("Error", jsonErr)
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(Response.self, from: data)
+            callback(response, error)
+        } catch {
+            callback(nil, error)
         }
+        
     }.resume()
 }

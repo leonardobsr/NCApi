@@ -8,11 +8,10 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class TableViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        getCountries(query: "", page: 1, limit: 1)
     }
 }
