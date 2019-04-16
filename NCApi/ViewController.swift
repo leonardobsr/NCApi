@@ -150,7 +150,8 @@ extension ViewController: UITableViewDataSourcePrefetching {
 //MARK: - UISearchbar delegate
 extension ViewController: UISearchBarDelegate{
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        tableView.reloadData()
+        updateRowsWithCountries(query: nil, page: 1, limit: 10)
+        spinner?.startAnimating()
     }
     
     
