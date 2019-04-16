@@ -14,13 +14,13 @@ class ViewController: UITableViewController {
     private let tablCellId = "countryCell"
     private let detailScreenId = "countryDetailsIdentifier"
     private var searchController: UISearchController!
-    private var aryDownloadedData:[Country]?
+    var aryDownloadedData:[Country] = []
     var spinner:UIActivityIndicatorView?
     
     var isFetchInProgress: Bool = false
     var totalCount: Int = 0
     var page: Int = 1
-    var aryDownloadedData:[Country] = []
+    
 
     override func viewDidLoad() {
         super.viewDidLoad()
