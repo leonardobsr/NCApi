@@ -13,6 +13,9 @@ class ViewController: UITableViewController {
     
     private let tablCellId = "countryCell"
     private let detailScreenId = "countryDetailsIdentifier"
+    private var searchController: UISearchController!
+    private var aryDownloadedData:[Country]?
+    var spinner:UIActivityIndicatorView?
     
     var isFetchInProgress: Bool = false
     var totalCount: Int = 0
@@ -21,6 +24,15 @@ class ViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+                searchController = UISearchController(searchResultsController: nil)
+        searchController.searchResultsUpdater = self
+        searchController.dimsBackgroundDuringPresentation = true
+        searchController.searchBar.placeholder = "Country name"
+        searchController.searchBar.delegate = self
+        searchController.searchBar.sizeToFit()
+        tableView.tableHeaderView = searchController.searchBar
+        
+        spinner = makeSpinner(view: self.view)
         self.tableView.prefetchDataSource = self
         updateRowsWithCountries(query: nil, page: self.page, limit: 10)
     }
@@ -35,7 +47,7 @@ class ViewController: UITableViewController {
         }
         // 2
         let indexPathsToReload = visibleIndexPathsToReload(intersecting: newIndexPathsToReload)
-        tableView.reloadRows(at: indexPathsToReload, with: .automatic)
+        tableView.reloadRows(at: indexPathsToReload, with: .automatic)        
     }
     
     func updateRowsWithCountries(query: String?, page: Int, limit: Int) {
@@ -53,6 +65,8 @@ class ViewController: UITableViewController {
                     }
                     self.aryDownloadedData += responseData.Response
                     self.isFetchInProgress = false
+                    self.aryDownloadedData = responseData.Response
+                    self.spinner?.dismissLoader()
                     self.tableView.reloadData()
                 }
             }
@@ -81,7 +95,7 @@ class ViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: tablCellId) as! CountryTableViewCell
-        cell.countryImageView?.imageFromServerURL(self.aryDownloadedData[indexPath.row].FlagPng ?? "", placeHolder: UIImage(named: "600X400"))
+                    cell.countryImageView?.imageFromServerURL(self.aryDownloadedData[indexPath.row].FlagPng ?? "", placeHolder: UIImage(named: "600X400"))
         cell.countryNameLabel?.text = self.aryDownloadedData[indexPath.row].Name
         if isLoadingCell(for: indexPath) {
 //            cell.configure(with: .none)
@@ -117,5 +131,47 @@ extension ViewController: UITableViewDataSourcePrefetching {
         if indexPaths.contains(where: isLoadingCell) {
             self.updateRowsWithCountries(query: nil, page: page, limit: 10)
         }
+    }
+    
+    func makeSpinner(view: UIView) -> UIActivityIndicatorView {
+        
+        let spinner = UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: 70, height:70))
+        spinner.backgroundColor = UIColor.black
+        spinner.layer.cornerRadius = 3.0
+        spinner.clipsToBounds = true
+        spinner.hidesWhenStopped = true
+        spinner.style = UIActivityIndicatorView.Style.white;
+        spinner.center = view.center
+        view.addSubview(spinner)
+        return spinner
+    }
+}
+
+//MARK: - UISearchbar delegate
+extension ViewController: UISearchBarDelegate{
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        tableView.reloadData()
+    }
+    
+    
+}
+
+//MARK: - UISearchResultsUpdating
+extension ViewController: UISearchResultsUpdating{
+    func updateSearchResults(for searchController: UISearchController) {
+        if let searchText = searchController.searchBar.text,
+            !searchText.isEmpty {
+            self.spinner?.startAnimating()
+            updateRowsWithCountries(query: searchText, page: 1, limit: 10)
+            tableView.reloadData()
+        }
+    }
+}
+
+//MARK: - UIActivityIndicatorView
+extension UIActivityIndicatorView {
+    func dismissLoader() {
+        self.stopAnimating()
+        UIApplication.shared.endIgnoringInteractionEvents()
     }
 }
