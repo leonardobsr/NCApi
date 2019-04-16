@@ -85,20 +85,9 @@ extension ViewController: UISearchBarDelegate{
 
 extension ViewController: UISearchResultsUpdating{
     func updateSearchResults(for searchController: UISearchController) {
-        //self.aryDownloadedData?.removeAll(keepingCapacity: false)
         if let searchText = searchController.searchBar.text,
             !searchText.isEmpty {
-            print(searchText)
             updateRowsWithCountries(query: searchText, page: 1, limit: 10)
-                        
-            /*
-            filteredCountryArray = aryDownloadedData?.filter {$0.Name?.lowercased().contains(searchText.lowercased()) ?? false} ?? []
-            
-            if filteredCountryArray.count == 0{
-                //Not found country than request API using search text
-                updateRowsWithCountries(query: searchText, page: 1, limit: 10)
-            }*/
-            
             tableView.reloadData()
         }
     }
