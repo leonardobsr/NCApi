@@ -8,23 +8,23 @@
 
 import UIKit
 
-
 class ViewController: UITableViewController {
     
-    private let tablCellId = "countryCell"
-    private let detailScreenId = "countryDetailsIdentifier"
-    private var searchController: UISearchController!
-    var aryDownloadedData:[Country] = []
+    let tablCellId = "countryCell"
+    let detailScreenId = "countryDetailsIdentifier"
+    var searchController: UISearchController!
     var spinner:UIActivityIndicatorView?
     
     var isFetchInProgress: Bool = false
+    var query: String? = nil
     var totalCount: Int = 0
     var page: Int = 1
-    
+    var aryDownloadedData:[Country] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
-                searchController = UISearchController(searchResultsController: nil)
+        
+        searchController = UISearchController(searchResultsController: nil)
         searchController.searchResultsUpdater = self
         searchController.dimsBackgroundDuringPresentation = true
         searchController.searchBar.placeholder = "Country name"
@@ -33,39 +33,25 @@ class ViewController: UITableViewController {
         tableView.tableHeaderView = searchController.searchBar
         
         spinner = makeSpinner(view: self.view)
-        self.tableView.prefetchDataSource = self
-        updateRowsWithCountries(query: nil, page: self.page, limit: 10)
-    }
-    
-    func onFetchCompleted(with newIndexPathsToReload: [IndexPath]?) {
-        // 1
-        guard let newIndexPathsToReload = newIndexPathsToReload else {
-//            self.indicatorView.stopAnimating()
-            tableView.isHidden = false
-            tableView.reloadData()
-            return
-        }
-        // 2
-        let indexPathsToReload = visibleIndexPathsToReload(intersecting: newIndexPathsToReload)
-        tableView.reloadRows(at: indexPathsToReload, with: .automatic)        
+        
+        tableView.prefetchDataSource = self
+        updateRowsWithCountries(query: query, page: page, limit: 10)
     }
     
     func updateRowsWithCountries(query: String?, page: Int, limit: Int) {
-        guard !self.isFetchInProgress else {
+        guard !isFetchInProgress else {
             return
         }
-        self.isFetchInProgress = true
+        
+        isFetchInProgress = true
         
         Response.getCountries(query: query, page: page, limit: limit, completion: { (data: Response?, error: Error?) in
             if let responseData = data {
                 DispatchQueue.main.async {
-                    self.totalCount = responseData.TotalCount
-                    if (self.page < self.totalCount) {
-                        self.page += 1
-                    }
-                    self.aryDownloadedData += responseData.Response
+                    self.page += 1
                     self.isFetchInProgress = false
-                    self.aryDownloadedData = responseData.Response
+                    self.totalCount = responseData.TotalCount
+                    self.aryDownloadedData += responseData.Response
                     self.spinner?.dismissLoader()
                     self.tableView.reloadData()
                 }
@@ -73,42 +59,29 @@ class ViewController: UITableViewController {
         })
     }
     
-    func calculateIndexPathsToReload(from newCountries: [Country]) -> [IndexPath] {
-        let startIndex = self.aryDownloadedData.count - newCountries.count
-        let endIndex = startIndex + newCountries.count
-        return (startIndex..<endIndex).map { IndexPath(row: $0, section: 0) }
-    }
-    
-    func isLoadingCell(for indexPath: IndexPath) -> Bool {
-        return indexPath.row >= self.totalCount
-    }
-    
-    func visibleIndexPathsToReload(intersecting indexPaths: [IndexPath]) -> [IndexPath] {
-        let indexPathsForVisibleRows = tableView.indexPathsForVisibleRows ?? []
-        let indexPathsIntersection = Set(indexPathsForVisibleRows).intersection(indexPaths)
-        return Array(indexPathsIntersection)
-    }
-    
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return aryDownloadedData.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: tablCellId) as! CountryTableViewCell
-                    cell.countryImageView?.imageFromServerURL(self.aryDownloadedData[indexPath.row].FlagPng ?? "", placeHolder: UIImage(named: "600X400"))
-        cell.countryNameLabel?.text = self.aryDownloadedData[indexPath.row].Name
-        if isLoadingCell(for: indexPath) {
-//            cell.configure(with: .none)
-        } else {
-//            cell.configure(with: self.aryDownloadedData(at: indexPath.row))
-        }
+        
+        cell.countryImageView?.imageFromServerURL(aryDownloadedData[indexPath.row].FlagPng ?? "", placeHolder: UIImage(named: "600X400"))
+        cell.countryNameLabel?.text = aryDownloadedData[indexPath.row].Name
+        
         return cell
     }
-    
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.aryDownloadedData.count
-    }
 
+    override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if indexPath.row == aryDownloadedData.count - 1 {
+            updateRowsWithCountries(query: query, page: page, limit: 10)
+        }
+    }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         guard let identifier = segue.identifier else { return }
         
@@ -126,11 +99,10 @@ class ViewController: UITableViewController {
     }
 }
 
+//MARK: - UITableView Prefetching
 extension ViewController: UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        if indexPaths.contains(where: isLoadingCell) {
-            self.updateRowsWithCountries(query: nil, page: page, limit: 10)
-        }
+        updateRowsWithCountries(query: query, page: page, limit: 10)
     }
     
     func makeSpinner(view: UIView) -> UIActivityIndicatorView {
@@ -150,7 +122,9 @@ extension ViewController: UITableViewDataSourcePrefetching {
 //MARK: - UISearchbar delegate
 extension ViewController: UISearchBarDelegate{
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        updateRowsWithCountries(query: nil, page: 1, limit: 10)
+        query = nil
+        page = 1
+        updateRowsWithCountries(query: query, page: page, limit: 10)
         spinner?.startAnimating()
     }
     
@@ -162,10 +136,11 @@ extension ViewController: UISearchResultsUpdating{
     func updateSearchResults(for searchController: UISearchController) {
         if let searchText = searchController.searchBar.text,
             !searchText.isEmpty {
-            self.spinner?.startAnimating()
-            updateRowsWithCountries(query: searchText, page: 1, limit: 10)
-            tableView.reloadData()
-        }
+                query = searchText
+                self.spinner?.startAnimating()
+                updateRowsWithCountries(query: query, page: page, limit: 10)
+                tableView.reloadData()
+            }
     }
 }
 
